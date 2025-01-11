@@ -4,15 +4,14 @@
 
 
 struct stats{
-  float user_time;
-  float sys_time;
-  float total_time;
-  float cpu;
+  double user_time;
+  double sys_time;
+  double total_time;
+  double cpu;
 };
 
 void print_stats(struct stats info, int iterations);
 void update_stats(struct stats* info, struct tms usage, struct timespec start, struct timespec end);
-
 
 
 int main(int argc,char* argv[]){ 
@@ -53,11 +52,10 @@ int main(int argc,char* argv[]){
     if (res){
       return 1;
     }
-    // usleep(50000);
   }
   
   times(&usage);
-  clock_gettime(CLOCK_MONOTONIC_RAW, &end);
+  clock_gettime(CLOCK_MONOTONIC, &end);
 
   update_stats(&info, usage, start, end);
    
@@ -69,15 +67,15 @@ int main(int argc,char* argv[]){
 
 void update_stats(struct stats* info, struct tms usage, struct timespec start, struct timespec end){
   long cycles = sysconf(_SC_CLK_TCK);
-  info->user_time = (float)(usage.tms_cutime)/cycles;
-  info->sys_time = (float)(usage.tms_cstime)/cycles;
-  info->total_time = end.tv_sec - start.tv_sec;
+  info->user_time = (double)(usage.tms_cutime)/cycles;
+  info->sys_time = (double)(usage.tms_cstime)/cycles;
+  info->total_time = end.tv_sec - start.tv_sec - (double)(usage.tms_stime + usage.tms_utime)/cycles;
   info->total_time += (double)(end.tv_nsec - start.tv_nsec)/BILLION;
   info->cpu = (info->user_time + info->sys_time)/info->total_time * 100;
 }
 
 void print_stats(struct stats info, int iterations){
-  printf("user: %0.4f \nsys: %0.4f\n", info.user_time/iterations, info.sys_time/iterations);
-  printf("total time: %0.3lf\n", info.total_time/iterations);
+  printf("user: %0.6lf \nsys: %0.6lf\n", info.user_time/iterations, info.sys_time/iterations);
+  printf("total time: %0.4lf\n", info.total_time/iterations);
   printf("CPU %0.2f%%\n", info.cpu);
 }
