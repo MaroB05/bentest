@@ -42,7 +42,7 @@ int main(int argc,char* argv[]){
     pid = fork(); 
     
     if (pid){
-      clock_gettime(CLOCK_MONOTONIC, &start);
+      clock_gettime(CLOCK_MONOTONIC_RAW, &start);
     }
     else{
       if (execvp(argv[2], argv+2) == -1)
