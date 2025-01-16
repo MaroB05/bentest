@@ -8,11 +8,9 @@ struct stats{
   double sys_time;
   double total_time;
   double cpu;
-  long vol_context_switches;
-  long invol_context_switches;
 };
 
-void print_stats(struct stats info, int iterations);
+void print_stats(struct stats info, struct rusage rusage, int iterations);
 void update_stats(struct stats *info, struct rusage rusage, struct timespec start, struct timespec end);
 
 
@@ -33,7 +31,6 @@ int main(int argc,char* argv[]){
 
   int iterations = atoi(argv[1]);
   struct timespec start, end;
-  struct tms usage = {0};
   struct stats info;
   struct rusage rusage;
 
@@ -54,21 +51,22 @@ int main(int argc,char* argv[]){
     //test if an error occurred with the forked process
     wait(&res);
     clock_gettime(CLOCK_MONOTONIC_RAW, &end);
-    times(&usage);
     if (res){
+      printf("an error occured in the process\n");
       return 1;
     }
   }
 
   getrusage(RUSAGE_CHILDREN, &rusage);
   update_stats(&info, rusage, start, end);
-  print_stats(info, iterations);
+  print_stats(info, rusage,iterations);
 
   return 0;
 }
 
 
-void update_stats(struct stats *info, struct rusage rusage, struct timespec start, struct timespec end){
+void update_stats(struct stats *info, struct rusage rusage,
+                  struct timespec start, struct timespec end){
   double user = rusage.ru_utime.tv_sec;
   user += (double)rusage.ru_utime.tv_usec/MILLION;
   double sys = rusage.ru_stime.tv_sec;
@@ -79,16 +77,22 @@ void update_stats(struct stats *info, struct rusage rusage, struct timespec star
   info->total_time += end.tv_sec - start.tv_sec;
   info->total_time += (double)(end.tv_nsec - start.tv_nsec)/BILLION;
   info->cpu = (user + sys)/(info->total_time) * 100;
-  info->vol_context_switches = rusage.ru_nvcsw;
-  info->invol_context_switches = rusage.ru_nivcsw;
 }
 
 
-void print_stats(struct stats info, int iterations){
+void print_stats(struct stats info, struct rusage rusage, int iterations){
   printf("\n--------------------\n");
-  printf("user: %0.6lf \nsys: %0.6lf\n", info.user_time/iterations, info.sys_time/iterations);
+  printf("user: %0.6lf \tsys: %0.6lf\n", info.user_time/iterations,
+         info.sys_time/iterations);
   printf("total time: %0.4lf\t", info.total_time);
   printf("CPU: %0.2f%%\n", info.cpu/iterations);
-  printf("voluntary context switches: %ld\n", info.vol_context_switches/iterations);
-  printf("involuntary context switches: %ld\n", info.invol_context_switches/iterations);
+
+  printf("Context Switches:\n\tvoluntary: %ld\n\tinvoluntary: %ld\n",
+         rusage.ru_nvcsw/iterations, rusage.ru_nivcsw/iterations);
+
+  printf("Page Faults:\n\tsoft: %ld\n\thard: %ld\n",
+         rusage.ru_minflt, rusage.ru_majflt);
+
+  printf("File System I/O:\n\tinput blocks: %ld\n\toutput blocks: %ld\n",
+         rusage.ru_inblock, rusage.ru_oublock);
 }
