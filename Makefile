@@ -1,5 +1,2 @@
 compile: 
-	gcc -Wall ./src/main.c -o ./build/Bentest.out 
-
-run: 
-	./build/Bentest.out
+	gcc -Wall ./src/main.c -o ./build/bentest
