@@ -54,7 +54,6 @@ int main(int argc,char* argv[]){
     //test if an error occurred with the forked process
     wait(&res);
     clock_gettime(CLOCK_MONOTONIC_RAW, &end);
-    times(&usage);
     if (res){
       return 1;
     }
