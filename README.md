@@ -83,6 +83,7 @@ The program outputs statistics for each run and a summary of:
 
 ## Future Enhancements
 - Add memory usage monitoring.
+- Monitor system calls
 - Improve the accuracy for total time measurement.
 - Portability to non-unix systems.
 
