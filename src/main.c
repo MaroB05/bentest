@@ -1,17 +1,19 @@
 #include "unix.h"
 
+#define MILLION 1000000.0
 #define BILLION 1000000000.0
-
 
 struct stats{
   double user_time;
   double sys_time;
   double total_time;
   double cpu;
+  long vol_context_switches;
+  long invol_context_switches;
 };
 
 void print_stats(struct stats info, int iterations);
-void update_stats(struct stats* info, struct tms usage, struct timespec start, struct timespec end);
+void update_stats(struct stats *info, struct rusage rusage, struct timespec start, struct timespec end);
 
 
 int main(int argc,char* argv[]){ 
@@ -33,6 +35,7 @@ int main(int argc,char* argv[]){
   struct timespec start, end;
   struct tms usage = {0};
   struct stats info;
+  struct rusage rusage;
 
   int pid, res;
   for (int i = 0; i < iterations; i++){
@@ -50,33 +53,42 @@ int main(int argc,char* argv[]){
     //next iteration
     //test if an error occurred with the forked process
     wait(&res);
-    clock_gettime(CLOCK_MONOTONIC, &end);
+    clock_gettime(CLOCK_MONOTONIC_RAW, &end);
     times(&usage);
-    update_stats(&info, usage, start, end);
     if (res){
       return 1;
     }
   }
-   
+
+  getrusage(RUSAGE_CHILDREN, &rusage);
+  update_stats(&info, rusage, start, end);
   print_stats(info, iterations);
 
   return 0;
 }
 
 
-void update_stats(struct stats* info, struct tms usage, struct timespec start, struct timespec end){
-  long cycles = sysconf(_SC_CLK_TCK);
-  info->user_time = (double)(usage.tms_cutime)/cycles;
-  info->sys_time = (double)(usage.tms_cstime)/cycles;
+void update_stats(struct stats *info, struct rusage rusage, struct timespec start, struct timespec end){
+  double user = rusage.ru_utime.tv_sec;
+  user += (double)rusage.ru_utime.tv_usec/MILLION;
+  double sys = rusage.ru_stime.tv_sec;
+  sys += (double)rusage.ru_stime.tv_usec/MILLION;
+
+  info->user_time = user;
+  info->sys_time = sys;
   info->total_time += end.tv_sec - start.tv_sec;
   info->total_time += (double)(end.tv_nsec - start.tv_nsec)/BILLION;
-  double parent = (double)(usage.tms_utime + usage.tms_stime)/cycles;
-  info->cpu = (info->user_time + info->sys_time)/(info->total_time - parent) * 100;
+  info->cpu = (user + sys)/(info->total_time) * 100;
+  info->vol_context_switches = rusage.ru_nvcsw;
+  info->invol_context_switches = rusage.ru_nivcsw;
 }
 
+
 void print_stats(struct stats info, int iterations){
-  printf("\n\n--------------------\n");
+  printf("\n--------------------\n");
   printf("user: %0.6lf \nsys: %0.6lf\n", info.user_time/iterations, info.sys_time/iterations);
-  printf("total time: %0.4lf\n", info.total_time/iterations);
-  printf("CPU %0.2f%%\n", info.cpu);
+  printf("total time: %0.4lf\t", info.total_time);
+  printf("CPU: %0.2f%%\n", info.cpu/iterations);
+  printf("voluntary context switches: %ld\n", info.vol_context_switches/iterations);
+  printf("involuntary context switches: %ld\n", info.invol_context_switches/iterations);
 }
