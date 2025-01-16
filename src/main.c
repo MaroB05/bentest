@@ -91,8 +91,8 @@ void print_stats(struct stats info, struct rusage rusage, int iterations){
          rusage.ru_nvcsw/iterations, rusage.ru_nivcsw/iterations);
 
   printf("Page Faults:\n\tsoft: %ld\n\thard: %ld\n",
-         rusage.ru_minflt, rusage.ru_majflt);
+         rusage.ru_minflt/iterations, rusage.ru_majflt/iterations);
 
   printf("File System I/O:\n\tinput blocks: %ld\n\toutput blocks: %ld\n",
-         rusage.ru_inblock, rusage.ru_oublock);
+         rusage.ru_inblock/iterations, rusage.ru_oublock/iterations);
 }
