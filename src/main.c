@@ -8,8 +8,6 @@ struct stats{
   double sys_time;
   double total_time;
   double cpu;
-  long vol_context_switches;
-  long invol_context_switches;
 };
 
 void print_stats(struct stats info, int iterations);
@@ -33,7 +31,6 @@ int main(int argc,char* argv[]){
 
   int iterations = atoi(argv[1]);
   struct timespec start, end;
-  struct tms usage = {0};
   struct stats info;
   struct rusage rusage;
 
@@ -55,19 +52,21 @@ int main(int argc,char* argv[]){
     wait(&res);
     clock_gettime(CLOCK_MONOTONIC_RAW, &end);
     if (res){
+      printf("an error occured in the process\n");
       return 1;
     }
   }
 
   getrusage(RUSAGE_CHILDREN, &rusage);
   update_stats(&info, rusage, start, end);
-  print_stats(info, iterations);
+  print_stats(info, rusage,iterations);
 
   return 0;
 }
 
 
-void update_stats(struct stats *info, struct rusage rusage, struct timespec start, struct timespec end){
+void update_stats(struct stats *info, struct rusage rusage,
+                  struct timespec start, struct timespec end){
   double user = rusage.ru_utime.tv_sec;
   user += (double)rusage.ru_utime.tv_usec/MILLION;
   double sys = rusage.ru_stime.tv_sec;
