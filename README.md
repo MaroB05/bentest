@@ -2,6 +2,7 @@
 
 `Bentest` is a **Performance Monitoring Tool** written in C. It measures runtime statistics of a given program.
 It repeatedly executes the specified program, collects metrics like execution time, CPU usage, and voluntary context switches, and outputs performance summaries to help identify potential inefficiencies.
+Think of it as Linux's `time` on steroids.
 
 ## Features
 
@@ -12,6 +13,8 @@ It repeatedly executes the specified program, collects metrics like execution ti
   - CPU usage
   - Voluntary context switches
   - Involuntary context switches
+  - Page Faults (soft and hard)
+  - File System I/O (input and output) blocks
 - Uses `getrusage` for high-accuracy CPU time measurement.
 - Accepts command-line arguments for flexibility.
 - Outputs statistics to help analyze program performance.
@@ -70,10 +73,8 @@ The program outputs statistics for each run and a summary of:
 2. **Process Creation**: Uses `fork()` to create a child process for each execution.
 3. **Program Execution**: The child process runs the program using `execvp()`.
 4. **Timing and Metrics**:
-   - Captures execution time using `clock_gettime`.
-   - Collects resource usage data using `getrusage` for higher accuracy.
-   - Tracks voluntary context switches.
-   - Tracks involuntary context switches.
+   - Captures execution time using `clock_gettime`
+   - Collects resource usage data using `getrusage`
 5. **Statistics Calculation**: Updates and aggregates runtime statistics across iterations.
 
 ## Limitations
@@ -81,8 +82,8 @@ The program outputs statistics for each run and a summary of:
 
 ## Future Enhancements
 - Add memory usage monitoring.
-- Support for additional metrics like involuntary context switches.
-- Portability to non-Linux systems.
+- Improve the accuracy for total time measurement.
+- Portability to non-unix systems.
 
 ## Contributing
 Contributions are welcome! If you find a bug or want to add a feature:
