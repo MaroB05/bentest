@@ -31,33 +31,32 @@ int main(int argc,char* argv[]){
 
   int iterations = atoi(argv[1]);
   struct timespec start, end;
-  struct tms usage;
+  struct tms usage = {0};
   struct stats info;
-  clock_gettime(CLOCK_MONOTONIC, &start);
 
   int pid, res;
   for (int i = 0; i < iterations; i++){
     pid = fork(); 
-
-    if (pid == 0){
+    
+    if (pid){
+      clock_gettime(CLOCK_MONOTONIC, &start);
+    }
+    else{
       if (execvp(argv[2], argv+2) == -1)
         perror("An error occured in the given command");
       return 1;
     }
-
     //wait for the process to terminate before getting to the 
     //next iteration
     //test if an error occurred with the forked process
     wait(&res);
+    clock_gettime(CLOCK_MONOTONIC, &end);
+    times(&usage);
+    update_stats(&info, usage, start, end);
     if (res){
       return 1;
     }
   }
-  
-  times(&usage);
-  clock_gettime(CLOCK_MONOTONIC, &end);
-
-  update_stats(&info, usage, start, end);
    
   print_stats(info, iterations);
 
@@ -69,12 +68,14 @@ void update_stats(struct stats* info, struct tms usage, struct timespec start, s
   long cycles = sysconf(_SC_CLK_TCK);
   info->user_time = (double)(usage.tms_cutime)/cycles;
   info->sys_time = (double)(usage.tms_cstime)/cycles;
-  info->total_time = end.tv_sec - start.tv_sec - (double)(usage.tms_stime + usage.tms_utime)/cycles;
+  info->total_time += end.tv_sec - start.tv_sec;
   info->total_time += (double)(end.tv_nsec - start.tv_nsec)/BILLION;
-  info->cpu = (info->user_time + info->sys_time)/info->total_time * 100;
+  double parent = (double)(usage.tms_utime + usage.tms_stime)/cycles;
+  info->cpu = (info->user_time + info->sys_time)/(info->total_time - parent) * 100;
 }
 
 void print_stats(struct stats info, int iterations){
+  printf("\n\n--------------------\n");
   printf("user: %0.6lf \nsys: %0.6lf\n", info.user_time/iterations, info.sys_time/iterations);
   printf("total time: %0.4lf\n", info.total_time/iterations);
   printf("CPU %0.2f%%\n", info.cpu);
