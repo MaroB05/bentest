@@ -1,8 +1,7 @@
 # Bentest
 
-**`Bentest`** is a Performance Monitoring Tool (Linux only, currently) written in C for measuring runtime statistics of a given program.
-It repeatedly executes the specified program, collects metrics like execution time and CPU usage, and outputs performance summaries.
-Think of it as linux's `time` but tests multiple times.
+`Bentest` is a **Performance Monitoring Tool** written in C. It measures runtime statistics of a given program.
+It repeatedly executes the specified program, collects metrics like execution time, CPU usage, and voluntary context switches, and outputs performance summaries to help identify potential inefficiencies.
 
 ## Features
 
@@ -11,6 +10,9 @@ Think of it as linux's `time` but tests multiple times.
   - System time
   - Total execution time
   - CPU usage
+  - Voluntary context switches
+  - Involuntary context switches
+- Uses `getrusage` for high-accuracy CPU time measurement.
 - Accepts command-line arguments for flexibility.
 - Outputs statistics to help analyze program performance.
 
@@ -42,14 +44,14 @@ Run the tool with the following command:
 ```bash
 ./build/bentest <num_iterations> <program> [args...]
 ```
-For quick programs, it is preferred to use a large number of iterations.
+
 ### Arguments:
 - `<num_iterations>`: The number of times to execute the program. Must be a positive integer.
 - `<program>`: The program to execute (e.g., `gzip`, `curl`, `python` scripts, etc.).
 - `[args...]`: Additional arguments for the program.
 
-### Example:
-**Compress a file with `gzip`:**
+### Examples:
+1. **Compress a file with `gzip`:**
    ```bash
    ./build/bentest 3 gzip sample.txt
    ```
@@ -61,6 +63,7 @@ The program outputs statistics for each run and a summary of:
 - System time
 - Total execution time
 - CPU usage percentage
+- Voluntary context switches (indicating potential system call frequency)
 
 ## How It Works
 1. **Argument Parsing**: The tool validates the number of iterations and the program to execute.
@@ -68,16 +71,18 @@ The program outputs statistics for each run and a summary of:
 3. **Program Execution**: The child process runs the program using `execvp()`.
 4. **Timing and Metrics**:
    - Captures execution time using `clock_gettime`.
-   - Collects resource usage data using the `tms` structure.
+   - Collects resource usage data using `getrusage` for higher accuracy.
+   - Tracks voluntary context switches.
+   - Tracks involuntary context switches.
 5. **Statistics Calculation**: Updates and aggregates runtime statistics across iterations.
 
 ## Limitations
 - Internal commands (e.g., `cd`, `exit`) are not supported directly.
-- Accuracy to be improved for certain edge cases (e.g. `ls`)
 
 ## Future Enhancements
 - Add memory usage monitoring.
-- Supporting Windows.
+- Support for additional metrics like involuntary context switches.
+- Portability to non-Linux systems.
 
 ## Contributing
 Contributions are welcome! If you find a bug or want to add a feature:
