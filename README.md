@@ -2,7 +2,7 @@
 
 **`Bentest`** is a Performance Monitoring Tool written in C for measuring runtime statistics of a given program.
 It repeatedly executes the specified program, collects metrics like execution time and CPU usage, and outputs performance summaries.
-Think of it as linux's `time` but extended tests multiple times.
+Think of it as linux's `time` but tests multiple times.
 
 ## Features
 
